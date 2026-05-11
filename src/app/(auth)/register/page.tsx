@@ -19,7 +19,6 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
 
-    // 1. Daftar ke Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -31,16 +30,15 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2. Simpan profil ke tabel public.users
     if (authData.user) {
       const { error: dbError } = await supabase
         .from('users')
         .insert([
           { 
-            id: authData.user.id, // Samakan ID agar sinkron
+            id: authData.user.id,
             email: email, 
             name: name,
-            role: 'customer' // Default role
+            role: 'customer'
           }
         ]);
 
@@ -54,55 +52,73 @@ export default function RegisterPage() {
     setSuccess(true);
     setLoading(false);
     
-    // Redirect otomatis setelah 2 detik
     setTimeout(() => {
       router.push('/login');
     }, 2000);
   };
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h1>Mendaftar Akun</h1>
-      <p>Buat akun pembeli Anda.</p>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>Pendaftaran berhasil! Mengalihkan ke halaman login...</p>}
-      
-      {!success && (
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: 'auto' }}>
-          <input 
-            type="text" 
-            placeholder="Nama Lengkap" 
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ padding: '0.5rem' }} 
-          />
-          <input 
-            type="email" 
-            placeholder="Email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ padding: '0.5rem' }} 
-          />
-          <input 
-            type="password" 
-            placeholder="Password (min 6 karakter)" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            style={{ padding: '0.5rem' }} 
-          />
-          <button type="submit" disabled={loading} style={{ padding: '0.5rem', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            {loading ? 'Memproses...' : 'Daftar Sekarang'}
-          </button>
-        </form>
-      )}
-      <p style={{ marginTop: '1rem' }}>
-        Sudah punya akun? <Link href="/login">Login di sini</Link>
-      </p>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 150px)' }}>
+      <div className="glass-card" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--primary)' }}>Daftar Akun Baru</h2>
+        <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem' }}>Bergabunglah dengan CabangKu</p>
+        
+        {error && (
+          <div style={{ background: '#FFEBEB', color: 'var(--secondary)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            {error}
+          </div>
+        )}
+        {success && (
+          <div style={{ background: '#E8F5E9', color: '#2E7D32', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>
+            Pendaftaran berhasil! Mengalihkan...
+          </div>
+        )}
+        
+        {!success && (
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Nama Lengkap</label>
+              <input 
+                type="text" 
+                className="input-field"
+                placeholder="Budi Santoso" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Email</label>
+              <input 
+                type="email" 
+                className="input-field"
+                placeholder="nama@email.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
+              <input 
+                type="password" 
+                className="input-field"
+                placeholder="Minimal 6 karakter" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.5rem' }}>
+              {loading ? 'Memproses...' : 'Daftar Sekarang'}
+            </button>
+          </form>
+        )}
+        <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.95rem' }}>
+          Sudah punya akun? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Login di sini</Link>
+        </p>
+      </div>
     </div>
   );
 }

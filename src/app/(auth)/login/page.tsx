@@ -28,7 +28,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Cek role user dari tabel public.users
     const { data: userData } = await supabase
       .from('users')
       .select('role')
@@ -45,36 +44,48 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h1>Login</h1>
-      <p>Masuk ke akun Anda.</p>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: 'auto' }}>
-        <input 
-          type="email" 
-          placeholder="Email" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: '0.5rem' }} 
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: '0.5rem' }} 
-        />
-        <button type="submit" disabled={loading} style={{ padding: '0.5rem', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          {loading ? 'Memproses...' : 'Login'}
-        </button>
-      </form>
-      <p style={{ marginTop: '1rem' }}>
-        Belum punya akun? <Link href="/register">Daftar di sini</Link>
-      </p>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 150px)' }}>
+      <div className="glass-card" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--primary)' }}>Selamat Datang Kembali</h2>
+        <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem' }}>Silakan masuk ke akun Anda</p>
+        
+        {error && (
+          <div style={{ background: '#FFEBEB', color: 'var(--secondary)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Email</label>
+            <input 
+              type="email" 
+              className="input-field"
+              placeholder="nama@email.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
+            <input 
+              type="password" 
+              className="input-field"
+              placeholder="••••••••" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.5rem' }}>
+            {loading ? 'Memproses...' : 'Login'}
+          </button>
+        </form>
+        <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.95rem' }}>
+          Belum punya akun? <Link href="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Daftar di sini</Link>
+        </p>
+      </div>
     </div>
   );
 }
