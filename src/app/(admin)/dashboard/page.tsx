@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -24,19 +25,25 @@ export default function AdminDashboard() {
         .eq('id', authData.user.id)
         .single();
 
-      if (!profile || profile.role !== 'branch_admin') {
-        alert("Akses ditolak! Anda bukan Admin Cabang.");
+      if (!profile || (profile.role !== 'branch_admin' && profile.role !== 'super_admin')) {
+        alert("Akses ditolak! Anda bukan Admin.");
         router.push('/');
         return;
       }
 
       setAdminData(profile);
 
-      const { data: orderData } = await supabase
+      // Jika super_admin, ambil semua order. Jika branch_admin, ambil khusus cabangnya
+      let query = supabase
         .from('orders')
-        .select('*, customer:users!customer_id(name, email)')
-        .eq('branch_id', profile.branch_id)
+        .select('*, customer:users!customer_id(name, email), branch:branches(name)')
         .order('created_at', { ascending: false });
+
+      if (profile.role === 'branch_admin') {
+        query = query.eq('branch_id', profile.branch_id);
+      }
+
+      const { data: orderData } = await query;
 
       setOrders(orderData || []);
       setLoading(false);
@@ -61,21 +68,33 @@ export default function AdminDashboard() {
 
   if (loading) return (
     <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--primary)' }}>
-      <h2>Memuat Data Cabang...</h2>
+      <h2>Memuat Data...</h2>
     </div>
   );
+
+  const isSuperAdmin = adminData.role === 'super_admin';
 
   return (
     <div style={{ paddingTop: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ margin: 0 }}>Dashboard Admin</h1>
+          <h1 style={{ margin: 0 }}>Dashboard Pemesanan</h1>
           <p style={{ color: '#666', fontSize: '1.1rem', margin: '0.5rem 0 0 0' }}>
-            Mengelola pesanan masuk untuk <strong style={{ color: 'var(--primary)' }}>{adminData.branch?.name || 'Cabang Anda'}</strong>
+            {isSuperAdmin 
+              ? 'Melihat seluruh pesanan dari semua cabang secara nasional.'
+              : <>Mengelola pesanan masuk untuk <strong style={{ color: 'var(--primary)' }}>{adminData.branch?.name || 'Cabang Anda'}</strong></>
+            }
           </p>
         </div>
-        <div style={{ background: 'var(--primary)', color: 'white', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 600 }}>
-          👤 {adminData.name}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {isSuperAdmin && (
+            <Link href="/catalog" style={{ textDecoration: 'none', background: 'var(--secondary)', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600 }}>
+              📦 Kelola Katalog
+            </Link>
+          )}
+          <div style={{ background: 'var(--primary)', color: 'white', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 600 }}>
+            👤 {adminData.name} ({isSuperAdmin ? 'Super Admin' : 'Admin Cabang'})
+          </div>
         </div>
       </div>
       
@@ -86,7 +105,7 @@ export default function AdminDashboard() {
               <tr style={{ background: 'rgba(255,123,0,0.05)', borderBottom: '2px solid rgba(255,123,0,0.2)' }}>
                 <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Tanggal</th>
                 <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Pembeli</th>
-                <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Metode</th>
+                <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Cabang Eksekutor</th>
                 <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Tagihan Validasi</th>
                 <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600 }}>Status</th>
                 <th style={{ padding: '1rem', color: 'var(--dark)', fontWeight: 600, textAlign: 'center' }}>Aksi</th>
@@ -104,10 +123,14 @@ export default function AdminDashboard() {
                   </td>
                   <td style={{ padding: '1rem' }}>
                     <span style={{ 
-                      background: '#E3F2FD', color: '#1565C0', padding: '0.3rem 0.6rem', 
-                      borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' 
+                      background: isSuperAdmin ? '#FFF0E6' : '#E3F2FD', 
+                      color: isSuperAdmin ? 'var(--primary)' : '#1565C0', 
+                      padding: '0.4rem 0.6rem', 
+                      borderRadius: '6px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 600 
                     }}>
-                      {order.payment_method}
+                      🏢 {order.branch?.name || 'Cabang Tidak Diketahui'}
                     </span>
                   </td>
                   <td style={{ padding: '1rem' }}>
@@ -147,7 +170,7 @@ export default function AdminDashboard() {
                 <tr>
                   <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📭</div>
-                    Belum ada pesanan yang masuk ke cabang ini.
+                    Belum ada pesanan yang masuk.
                   </td>
                 </tr>
               )}

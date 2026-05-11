@@ -36,7 +36,9 @@ export default function LoginPage() {
 
     setLoading(false);
     
-    if (userData?.role === 'branch_admin') {
+    if (userData?.role === 'super_admin') {
+      router.push('/catalog');
+    } else if (userData?.role === 'branch_admin') {
       router.push('/dashboard');
     } else {
       router.push('/products');

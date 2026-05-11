@@ -5,6 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import { calculateDistance, generateUniqueCode } from '@/lib/utils';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Import peta secara dinamis agar tidak error saat rendering di sisi server (karena Leaflet butuh objek window browser)
+const MapPicker = dynamic(() => import('@/components/MapPicker'), {
+  ssr: false,
+  loading: () => <div style={{ height: '350px', background: '#f5f5f5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Memuat Peta Interaktif...</div>
+});
 
 export default function CheckoutPage() {
   const { id } = useParams();
@@ -44,24 +51,15 @@ export default function CheckoutPage() {
     loadData();
   }, [id, router]);
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setLat(position.coords.latitude);
-        setLng(position.coords.longitude);
-        alert("Lokasi berhasil didapatkan!");
-      }, () => {
-        alert("Gagal mendapatkan lokasi. Pastikan GPS aktif atau izin diberikan.");
-      });
-    } else {
-      alert("Browser Anda tidak mendukung fitur lokasi.");
-    }
+  const handleMapChange = (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
   };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lat || !lng) {
-      alert("Silakan klik 'Ambil Lokasi Saat Ini' terlebih dahulu agar kami bisa mencari cabang terdekat!");
+      alert("Silakan tentukan titik lokasi Anda pada peta terlebih dahulu!");
       return;
     }
 
@@ -174,8 +172,12 @@ export default function CheckoutPage() {
         <h1 style={{ textAlign: 'center' }}>Selesaikan Pembelian</h1>
         
         <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,240,230,0.9) 100%)' }}>
-          <div style={{ fontSize: '3rem', background: 'var(--light)', padding: '1rem', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-            📦
+          <div style={{ width: '80px', height: '80px', background: 'var(--light)', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {product.image_url ? (
+              <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '2rem' }}>📦</span>
+            )}
           </div>
           <div>
             <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--dark)' }}>{product.name}</h3>
@@ -199,23 +201,13 @@ export default function CheckoutPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Lokasi Akurat (GPS)</label>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button 
-                type="button" 
-                onClick={getLocation} 
-                style={{ 
-                  padding: '0.75rem 1.5rem', background: lat ? '#2E7D32' : 'var(--primary)', 
-                  color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer',
-                  fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  transition: 'var(--transition)'
-                }}
-              >
-                {lat ? '✅ Lokasi Tersimpan' : '📍 Ambil Titik Lokasi'}
-              </button>
-              <span style={{ fontSize: '0.9rem', color: lat ? '#2E7D32' : '#666', background: lat ? '#E8F5E9' : '#eee', padding: '0.5rem 1rem', borderRadius: '20px' }}>
-                {lat ? `${lat.toFixed(5)}, ${lng?.toFixed(5)}` : 'Wajib diisi agar kami bisa mencari cabang terdekat'}
-              </span>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Tentukan Lokasi Akurat (Peta)</label>
+            <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem' }}>Sistem akan mencoba mendeteksi GPS Anda. Anda bisa mengklik atau menggeser peta untuk mendapatkan titik paling akurat di rumah Anda.</p>
+            
+            <MapPicker lat={lat} lng={lng} onChange={handleMapChange} />
+            
+            <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: lat ? '#2E7D32' : 'var(--secondary)' }}>
+              {lat ? `✅ Koordinat tersimpan: ${lat.toFixed(5)}, ${lng?.toFixed(5)}` : '⚠️ Menunggu interaksi Anda pada peta...'}
             </div>
           </div>
 
